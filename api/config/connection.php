@@ -1,15 +1,20 @@
 <?php
-// db.php
 $host = 'localhost';
-$db = 'laser-app';
-$user = 'laser'; // Use your DB username
-$pass = '?%RyHpgPxg?9'; // Use your DB password
+$db   = 'laser-app';
+$user = 'laser';
+$pass = '?%RyHpgPxg?9';
 
-$conn = new mysqli($host, $user, $pass, $db);
+$dsn = "mysql:host=$host;dbname=$db;charset=utf8mb4";
 
-// Check if the connection is successful
-if ($conn->connect_error) {
-    http_response_code(500); // Internal server error
+try {
+    $pdo = new PDO($dsn, $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+    ]);
+} catch (PDOException $e) {
+    http_response_code(500);
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode(["error" => "Database connection failed"]);
     exit;
 }

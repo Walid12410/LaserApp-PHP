@@ -46,22 +46,25 @@ function check_auth(): array
 
     // 4) Look up the user in the database
     //    (We use a prepared statement to avoid SQL injection.)
-    global $conn;
-    $stmt = $conn->prepare("SELECT id, email, first_name, last_name, role FROM users WHERE id = ?");
-    $stmt->bind_param("i", $userId);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    global $pdo;
 
-    if ($result->num_rows === 0) {
-        // No such user
+    try {
+        $stmt = $pdo->prepare('SELECT id, email, first_name, last_name, role FROM users WHERE id = :id');
+        $stmt->execute([':id' => $userId]);
+        $user = $stmt->fetch();
+    } catch (PDOException $e) {
+        http_response_code(500);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Failed to validate user session']);
+        exit;
+    }
+
+    if (!$user) {
         http_response_code(401);
         header('Content-Type: application/json');
         echo json_encode(['error' => 'Unauthorized: user not found']);
         exit;
     }
-
-    $user = $result->fetch_assoc();
-    $stmt->close();
 
     // 5) Return the user row (password is not even selected, so no need to unset)
     return $user;
