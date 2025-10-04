@@ -20,12 +20,22 @@ function uid24(): string {
   return rtrim(strtr(base64_encode(random_bytes(18)), '+/', '-_'), '=');
 }
 
-function require_auth(): void {
+function require_auth(): array {
+  global $pdo;
+
   $h = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
   if (!str_starts_with($h, 'Bearer ')) json_out(['error'=>'unauthorized'], 401);
   $token = substr($h, 7);
-  if ($token !== AUTH_DEMO_TOKEN) json_out(['error'=>'invalid token'], 401);
+
+  $st = $pdo->prepare("SELECT id, email FROM users WHERE token=? LIMIT 1");
+  $st->execute([$token]);
+  $user = $st->fetch(PDO::FETCH_ASSOC);
+
+  if (!$user) json_out(['error'=>'invalid token'], 401);
+
+  return $user; // so you can access user data in APIs if needed
 }
+
 
 function job_dir(string $uid): string {
   return UPLOAD_DIR . "/$uid";
